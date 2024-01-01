@@ -2,16 +2,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace ADBHelper
 {
     internal class Program
     {
+        // Note : ADBHelper.exe should be placed at the same folder with adb.exe as
+        // wellas scrcpy.exe
         const string port = "5555";
-        const string adbFileName = @"E:\Software\scrcpy-win64-v2.3.1\adb.exe";
-        const string scrcpyPath = @" /k E:\Software\scrcpy-win64-v2.3.1\scrcpy.exe";
-        IEnumerable<DeviceData> devices = new AdbClient().GetDevices();
+        const string adbFileName = @".\adb.exe";
+        const string scrcpyPath = @" /k .\scrcpy.exe";
+
+        public IEnumerable<DeviceData> devices = new AdbClient().GetDevices();
 
         static string GetDeviceIpAddress(DeviceData device)
         {
@@ -61,7 +65,6 @@ namespace ADBHelper
                         }
                     }
                 }
-
                 Console.WriteLine("Failed to retrieve IP address.");
                 return null;
             }
@@ -130,6 +133,7 @@ namespace ADBHelper
                         " connect " + ip + ":" + port;
 
                     Process.Start(psi);
+                    System.Threading.Thread.Sleep(7000);
 
                     Console.WriteLine(IsDeviceOnlineInTCPIPMode(device) ? "done." : "failed.");
                 }
@@ -179,6 +183,7 @@ namespace ADBHelper
                     + w_h + " " + height.ToString();
 
                 // connect
+                Console.WriteLine("Mirroring " + device.Serial + "...");
                 var psi = new ProcessStartInfo();
                 psi.FileName = "cmd.exe";
                 psi.Arguments = arg;
@@ -187,22 +192,56 @@ namespace ADBHelper
                 Process.Start(psi);
 
                 System.Threading.Thread.Sleep(3000);
+                Console.WriteLine("done.");
                 x += 600;
             }
         }
 
         static void Main(string[] args)
         {
+            Program p = new Program();
+
+            if (p.devices.Count<DeviceData>() <= 0)
+            {
+                Console.WriteLine("No device is attached.");
+            }
+            else
+            {
+                Console.WriteLine("Attached device(s)  \n" +
+                        "---------------------");
+
+                foreach (var device in p.devices)
+                {
+                    Console.WriteLine(device.Serial + " - " + device.Model);
+                }
+
+                Console.WriteLine("---------------------");
+            }
+
             if (args.Length == 0)
             {
-                Console.WriteLine(
+                Console.WriteLine("\n" +
                     "Usage : \n" +
                       "   ADBHelper wireless  - switch USB connected ADB devices to TCPIP (wireless) mode \n" +
                       "   ADBHelper connect   - connect all devices for screen mirroring");
                 return;
             }
 
-            Program p = new Program();
+            // start ADB server.
+            if (!AdbServer.Instance.GetStatus().IsRunning)
+            {
+                Console.WriteLine("Starting adb server...");
+                AdbServer server = new AdbServer();
+                StartServerResult result = server.StartServer(@".\adb.exe", false);
+                if (result != StartServerResult.Started)
+                {
+                    Console.WriteLine("Can't start adb server");
+                }
+                else
+                {
+                    Console.WriteLine("done.");
+                }
+            }
 
             switch (args[0])
             {
