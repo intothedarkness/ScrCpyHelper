@@ -199,6 +199,22 @@ namespace ADBHelper
 
         static void Main(string[] args)
         {
+            // start ADB server.
+            if (!AdbServer.Instance.GetStatus().IsRunning)
+            {
+                Console.WriteLine("Starting adb server...");
+                AdbServer server = new AdbServer();
+                StartServerResult result = server.StartServer(@".\adb.exe", false);
+                if (result != StartServerResult.Started)
+                {
+                    Console.WriteLine("Can't start adb server");
+                }
+                else
+                {
+                    Console.WriteLine("done.");
+                }
+            }
+
             Program p = new Program();
 
             if (p.devices.Count<DeviceData>() <= 0)
@@ -225,22 +241,6 @@ namespace ADBHelper
                       "   ADBHelper wireless  - switch USB connected ADB devices to TCPIP (wireless) mode \n" +
                       "   ADBHelper connect   - connect all devices for screen mirroring");
                 return;
-            }
-
-            // start ADB server.
-            if (!AdbServer.Instance.GetStatus().IsRunning)
-            {
-                Console.WriteLine("Starting adb server...");
-                AdbServer server = new AdbServer();
-                StartServerResult result = server.StartServer(@".\adb.exe", false);
-                if (result != StartServerResult.Started)
-                {
-                    Console.WriteLine("Can't start adb server");
-                }
-                else
-                {
-                    Console.WriteLine("done.");
-                }
             }
 
             switch (args[0])
